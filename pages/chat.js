@@ -1,11 +1,14 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
+import { createClient } from '@supabase/supabase-js';
 import React from 'react';
 import appConfig from '../config.json';
 
 export default function ChatPage() {
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
-
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0Mzc0NzIyMywiZXhwIjoxOTU5MzIzMjIzfQ.7yy3ui0D8HpfioIpnj_quM_YVAXTT9o9yiwenGlHgwc';
+    const SUPABASE_URL = 'https://rrsfumbokzskyrvntqar.supabase.co';
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     /*
     // Usuário
     - Usuário digita no campo textarea
@@ -17,17 +20,39 @@ export default function ChatPage() {
     - [X] Vamos usar o onChange usa o useState (ter if pra caso seja enter pra limpar a variavel)
     - [X] Lista de mensagens 
     */
+
+    React.useEffect(() => {
+        supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+                console.log('Dados da consulta:', data);
+                setListaDeMensagens(data);
+            });
+    }, []);
+
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaDeMensagens.length + 1,
+            // id: listaDeMensagens.length + 1,
             de: 'vanessametonini',
             texto: novaMensagem,
         };
-        //(...)Espalhar coloca a mensagem nova no array
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens,
-        ]);
+
+        supabaseClient
+            .from('mensagens')
+            .insert([
+                // Tem que ser um objeto com os MESMOS CAMPOS que você escreveu no supabase
+                mensagem
+            ])
+            .then(({ data }) => {
+                console.log('Criando mensagem: ', data); //o que está vindo como resposta
+                setListaDeMensagens([
+                    data[0],
+                    ...listaDeMensagens,
+                ]);
+            });
+
         setMensagem('');
     }
 
@@ -174,7 +199,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
